@@ -1,16 +1,17 @@
-#ifndef RAYTRACINGRENDERER_H
-#define RAYTRACINGRENDERER_H
+#ifndef RAYTRACINGGLWIDGET_H
+#define RAYTRACINGGLWIDGET_H
+
+#include "renderer/raytracingrenderer.h"
 
 #include <QtOpenGL>
 #include <QtOpenGLWidgets>
 
 
-class RaytracingRenderer: public QOpenGLWidget
+class RaytracingGLWidget: public QOpenGLWidget
 {
 public:
-    RaytracingRenderer(QWidget* parent);
-    ~RaytracingRenderer();
-
+    RaytracingGLWidget(QWidget* parent);
+    ~RaytracingGLWidget();
 
     // init
     void initializeGL();
@@ -23,16 +24,19 @@ public:
 
 
 private:
-
+    // render timer
     QTimer timer;
+
+    // renderer
+    RaytracingRenderer* renderer = nullptr;
+
+    // view port
+    QRect viewport;
+    int width = 0;
+    int height = 0;
 
     // main shader to draw the canvas texture
     QOpenGLShaderProgram* mainProgram = nullptr;
-
-    // texture to where you render
-    QOpenGLTexture* canvasTexture = nullptr;
-    int width = 0;
-    int height = 0;
 
     // quad vertices
     float quadVerticies[24] = {
@@ -54,10 +58,7 @@ private:
     // create shader program
     void createShaderProgram();
 
-    // create canvas texture
-    void createCanvasTexture(int width, int height);
-
 
 };
 
-#endif // RAYTRACINGRENDERER_H
+#endif // RAYTRACINGGLWIDGET_H

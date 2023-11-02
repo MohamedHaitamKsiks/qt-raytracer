@@ -1,9 +1,11 @@
-#version 410
-uniform float u_Time;
+#version 460
+
 uniform sampler2D u_Texture;
+uniform int u_FrameCounter;
 in vec2 UV;
+out vec4 fragColor;
 
 void main(void)
 {
-    gl_FragColor = vec4(UV, cos(u_Time), 1.0f);
+    fragColor = vec4(texture(u_Texture, UV).rgb, 1.0f);
 }

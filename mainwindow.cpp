@@ -7,8 +7,10 @@ MainWindow::MainWindow(QWidget *parent)
     , ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
-    renderer = new RaytracingRenderer(ui->centralwidget);
+
+    renderer = new RaytracingGLWidget(ui->centralwidget);
     renderer->show();
+
     ui->centralwidget->layout()->addWidget(renderer);
 
 }

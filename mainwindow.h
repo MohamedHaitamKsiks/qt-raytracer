@@ -2,7 +2,7 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
-#include "raytracingrenderer.h"
+#include "raytracingglwidget.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -20,7 +20,7 @@ private slots:
 
 private:
     Ui::MainWindow *ui;
-    RaytracingRenderer* renderer = nullptr;
+    RaytracingGLWidget* renderer = nullptr;
 
 };
 #endif // MAINWINDOW_H
