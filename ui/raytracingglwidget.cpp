@@ -17,6 +17,8 @@ RaytracingGLWidget::RaytracingGLWidget(QWidget* parent):
     QOpenGLWidget(parent)
 {
     this->setMinimumSize(QSize(320, 180));
+    // craete raytracing renderer;
+    this->renderer = new RaytracingRenderer();
 }
 
 
@@ -55,7 +57,7 @@ void RaytracingGLWidget::initializeGL()
     this->createVbo();
 
     // create raytracing rendere
-    this->renderer = new RaytracingRenderer();
+    this->renderer->init();
 
     // init update
     connect(&timer, SIGNAL(timeout()), this, SLOT(update()));
@@ -117,10 +119,6 @@ void RaytracingGLWidget::paintGL()
 
     // draw texture
     this->mainProgram->bind();
-
-    // pass frame number
-    int frameCounterLocation = this->mainProgram->uniformLocation("u_FrameCounter");
-    this->mainProgram->setUniformValue(frameCounterLocation, this->renderer->getFrameCounter());
 
     //bind vertex attributes
     // get position attribute

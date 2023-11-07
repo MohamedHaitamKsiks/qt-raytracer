@@ -1,5 +1,6 @@
 #include "raytracingrenderer.h"
 #include "entity3d/ball3d.h"
+#include "entity3d/entitymanager.h"
 
 #include <QMessageBox>
 
@@ -15,56 +16,66 @@ RaytracingRenderer::RaytracingRenderer()
     assert(s_Instance == nullptr);
     s_Instance = this;
 
-    // get opengl 4.3 functions
-    glFunctions.initializeOpenGLFunctions();
-
-    // create program
-    this->computeProgram = new QOpenGLShaderProgram();
-    if (!computeProgram->addShaderFromSourceFile(QOpenGLShader::Compute, COMPUTE_SHADER_PATH))
-        QMessageBox::information(0, "error", this->computeProgram->log());
-    computeProgram->link();
-
-    // create data on gpu
-    this->createCanvasTexture();
-    this->createCommandBuffers();
-
     // create scene
-    sceneRoot = new Entity3D();
+    this->sceneRoot = new Entity3D();
+    this->sceneRoot->localPosition = QVector3D(0.0f, 0.0f, 0.0f);
 
     // fill scene
     {
-        auto* ball = new Ball3D(sceneRoot);
+        auto* ball = dynamic_cast<Ball3D*>(EntityManager::instance()->create("Ball3D", sceneRoot));
         ball->localPosition = QVector3D(0,-30.2,4);
         ball->radius = 30.0f;
         ball->material.smoothness = 0.0f;
         ball->material.color = QVector3D(0.333, 0.0, 1.0);
 
-        auto* ball1 = new Ball3D(sceneRoot);
-        ball1->localPosition = QVector3D(5.8f,2.8f,-6.0f);
-        ball1->radius = 5.3f;
+        auto* ball1 = dynamic_cast<Ball3D*>(EntityManager::instance()->create("Ball3D", sceneRoot));
+        ball1->localPosition = QVector3D(5.8f,2.8f,-8.0f);
+        ball1->radius = 10.3f;
         ball1->material.smoothness = 1.0f;
         ball1->material.emissive = true;
-        ball1->material.color = QVector3D(1.0f, 1.0f, 1.0f);
+        ball1->material.color = QVector3D(1.0f, 1.0f, 1.0f) * 10.0f;
 
-        auto* ball2 = new Ball3D(sceneRoot);
+        /*auto* ball2 = dynamic_cast<Ball3D*>(EntityManager::instance()->create("Ball3D", sceneRoot));
         ball2->localPosition = QVector3D(0.3f,0.1f,2.0f);
         ball2->radius = 0.3f;
         ball2->material.smoothness = 0.0f;
         ball2->material.color = QVector3D(1.0, 0.552, 0.0400);
 
-        auto* ball3 = new Ball3D(sceneRoot);
+        auto* ball3 = dynamic_cast<Ball3D*>(EntityManager::instance()->create("Ball3D", sceneRoot));
         ball3->localPosition = QVector3D(-0.35f,0.1f,2.5f);
         ball3->radius = 0.3f;
-        ball3->material.smoothness = 0.8f;
-        ball3->material.color = QVector3D(1.0, 0.552, 0.04);
+        ball3->material.smoothness = 1.0f;
+        ball3->material.color = QVector3D(1.0, 1.0,1.0);
 
-        auto* ball4 = new Ball3D(sceneRoot);
+        auto* ball4 = dynamic_cast<Ball3D*>(EntityManager::instance()->create("Ball3D", sceneRoot));
         ball4->localPosition = QVector3D(-0.8f,0.0f,1.5f);
         ball4->radius = 0.2f;
         ball4->material.smoothness = 1.0f;
-        ball4->material.color = QVector3D(0.8f, 0.8f, 0.8f);
+        ball4->material.color = QVector3D(0.8f, 0.8f, 0.8f);*/
     }
 
+}
+
+void RaytracingRenderer::init()
+{
+    // get opengl 4.3 functions
+    this->glFunctions.initializeOpenGLFunctions();
+
+    // create program
+    this->computeProgram = new QOpenGLShaderProgram();
+    if (!this->computeProgram->addShaderFromSourceFile(QOpenGLShader::Compute, COMPUTE_SHADER_PATH))
+        QMessageBox::information(0, "error", this->computeProgram->log());
+    this->computeProgram->link();
+
+    // cache uniform locations
+    this->frameCounterLocation = this->computeProgram->uniformLocation("u_FrameCounter");
+    this->sphereCommandCountLocation = this->computeProgram->uniformLocation("u_SphereCommandCount");
+    this->samplePerPixelLocation = this->computeProgram->uniformLocation("u_SamplePerPixel");
+    this->rayMaxBounceLocation =this->computeProgram->uniformLocation("u_RayMaxBounce");
+
+    // create data on gpu
+    this->createCanvasTexture();
+    this->createCommandBuffers();
 }
 
 RaytracingRenderer::~RaytracingRenderer()
@@ -75,7 +86,7 @@ RaytracingRenderer::~RaytracingRenderer()
     this->destroyCanvasTexture();
     this->destroyCommandBuffers();
 
-    delete sceneRoot;
+    delete this->sceneRoot;
 }
 
 void RaytracingRenderer::draw(QOpenGLContext* context, int width, int height)
@@ -102,24 +113,22 @@ void RaytracingRenderer::draw(QOpenGLContext* context, int width, int height)
     }
 
     // use compute shader
-    computeProgram->bind();
+    this->computeProgram->bind();
 
     // push draw commands to the shader
     this->glFunctions.glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, this->sphereCommands.size() * sizeof(SphereCommand), this->sphereCommands.data());
 
-    // send frame counter
-    int frameCounterLocation = computeProgram->uniformLocation("u_FrameCounter");
-    computeProgram->setUniformValue(frameCounterLocation, this->frameCounter);
-
-    // send sphere command count
-    int sphereCommandCountLocation = computeProgram->uniformLocation("u_SphereCommandCount");
-    computeProgram->setUniformValue(sphereCommandCountLocation,(int) this->sphereCommands.size());
+    // send unigform values
+    this->computeProgram->setUniformValue(this->frameCounterLocation, this->frameCounter);
+    this->computeProgram->setUniformValue(this->sphereCommandCountLocation,(int) this->sphereCommands.size());
+    this->computeProgram->setUniformValue(this->samplePerPixelLocation,(int) this->samplerPerPixel);
+    this->computeProgram->setUniformValue(this->rayMaxBounceLocation,(int) this->rayMaxBounce);
 
     // start compute
-    glFunctions.glDispatchCompute(width, height, 1);
+    this->glFunctions.glDispatchCompute(width, height, 1);
 
     // wait for compute shader to finish
-    glFunctions.glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+    this->glFunctions.glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 
     // clear commands
     this->sphereCommands.clear();

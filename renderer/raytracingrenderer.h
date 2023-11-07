@@ -20,6 +20,9 @@ public:
     RaytracingRenderer();
     ~RaytracingRenderer();
 
+    // init renderer
+    void init();
+
     // get singleton instance
     static inline RaytracingRenderer* instance()
     {
@@ -41,11 +44,34 @@ public:
         return frameCounter;
     }
 
+    // get scene root
+    inline Entity3D* getSceneRoot()
+    {
+        return sceneRoot;
+    }
+
+    // reset renderer
+    inline void resetRenderer()
+    {
+        frameCounter = 1;
+    }
+
+
 private:
     static RaytracingRenderer* s_Instance;
 
     // scene root
     Entity3D* sceneRoot = nullptr;
+
+    // ray tracer config
+    int rayMaxBounce = 5;
+    int samplerPerPixel = 2;
+
+    // cache uniform locations
+    int frameCounterLocation;
+    int sphereCommandCountLocation;
+    int samplePerPixelLocation;
+    int rayMaxBounceLocation;
 
     //gl functions
     QOpenGLFunctions_4_3_Core glFunctions{};

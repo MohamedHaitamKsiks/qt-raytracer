@@ -53,38 +53,73 @@ layout(std430, binding = 3) readonly buffer sphereCommandsBuffer {
 // uniforms
 uniform int u_FrameCounter; // current frame number;
 uniform int u_SphereCommandCount;
-// uniform int u_RayMaxBounce;
-// uniform int u_SamplePerPixel;
+uniform int u_RayMaxBounce;
+uniform int u_SamplePerPixel;
 
+
+// global variables
+uint seed;
 
 
 // get random integer
-uint randi(inout uint seed)
+uint randi()
 {
-    uint state = (seed ) * 747796405u + 2891336453u;
+    uint state = seed * 747796405u + 2891336453u;
     uint word = ((state >> ((state >> 28u)+ 4u) ^ state)* 277803737u);
     seed += word * 155238;
     return (word >> 22u) ^ word;
 };
 
 // get random float between 0 and 1
-float randf(inout uint seed)
+float randf()
 {
-    return randi(seed) / 4294967296.0;
+    return randi() / 4294967296.0;
 }
 
 // get random in uni sphere
-vec3 randInUniSphere(inout uint seed)
+vec3 randInUniSphere()
 {
     vec3 randomVector = vec3(0.0, 0.0, 0.0);
     for (int i = 0; i < UNI_SPHERE_MAX_ITER; i++)
     {
-        randomVector = vec3(randf(seed), randf(seed), randf(seed));
+        randomVector = vec3(randf(), randf(), randf());
         if ( length(randomVector) <= 1.0)
             break;
 
     }
     return normalize(randomVector);
+}
+
+// sigmoid function
+float sigmoid(float t, float offset, float steepness)
+{
+    return 1.0 / (exp(- steepness * (t - offset)) + 1.0);
+}
+
+// sigmoid derivative
+float sigmoidDeriv(float t, float offset, float steepness)
+{
+    return sigmoid(t, offset, steepness) * (1.0 - sigmoid(t, offset, steepness));
+}
+
+// sky color
+vec3 getSkyBoxColor(in Ray ray)
+{
+    // get base colors
+    vec3 skyColor = vec3(0.5, 0.8, 1.0);
+    vec3 horizonColor = vec3(1.0, 1.0, 1.0);
+    vec3 groundColor = vec3(0.2, 0.2, 0.4);
+
+    // get sky position from ray
+    float skyPosition = ray.direction.y;
+
+    // get contribution of each sky color
+    float skyContribution = sigmoid(skyPosition, 0.001, 500.0);
+    float groundContribution = sigmoid(skyPosition, -0.001, -500.0);
+    float horizonContribution = sigmoidDeriv(skyPosition, 0.0, 50.0) * 3.0;
+
+    // return sky box color
+    return skyContribution * skyColor + horizonContribution * horizonColor + groundContribution * groundColor;
 }
 
 // sphere on hit
@@ -123,16 +158,10 @@ RayHitInfo sphereOnHit(in SphereCommand command, in Ray ray)
 // trace ray
 vec3 trace(in Ray ray)
 {
-    // init seed for randome number generator
-    uint seed = u_FrameCounter + gl_GlobalInvocationID.x * gl_GlobalInvocationID.y * 8465132;
-
-    // sky color
-    vec3 skyColor = vec3(0.5, 0.8, 1.0);
-
     // accumulated light color
     vec3 lightColor = vec3(0.0, 0.0, 0.0);
 
-    for (int i = 0; i < 3; i++)
+    for (int i = 0; i < u_RayMaxBounce; i++)
     {
         RayHitInfo hitInfo;
         hitInfo.hit = false;
@@ -153,7 +182,7 @@ vec3 trace(in Ray ray)
         // emissive material
         if (hitInfo.material.emissive)
         {
-            lightColor += ray.color * (hitInfo.material.color * 10.0);
+            lightColor += ray.color * hitInfo.material.color;
             break;
         }
 
@@ -164,7 +193,7 @@ vec3 trace(in Ray ray)
         vec3 specularDir = reflect(ray.direction, hitInfo.normal);
 
         // get random direction
-        vec3 diffuseDir = randInUniSphere(seed);
+        vec3 diffuseDir = randInUniSphere();
         // check correct hemisphere
         if (dot(hitInfo.normal, diffuseDir) < 0.0)
             diffuseDir *= -1.0;
@@ -178,7 +207,7 @@ vec3 trace(in Ray ray)
     }
 
     // return computed color
-    return lightColor + ray.color * skyColor;
+    return lightColor + ray.color * getSkyBoxColor(ray);
 };
 
 // output image
@@ -186,6 +215,8 @@ layout(rgba32f, binding = 0) uniform image2D imgOutput;
 
 // raytracer main
 void main() {
+    // init seed
+    seed = u_FrameCounter * 786231 + gl_GlobalInvocationID.x * gl_GlobalInvocationID.y * 8465132;
 
     // get image size
     float width = gl_NumWorkGroups.x * gl_WorkGroupSize.x;
@@ -196,24 +227,29 @@ void main() {
 
     // init pixel color
     vec4 outColor = imageLoad(imgOutput, texelCoord);
-
-    // get ray
-    Ray ray;
-    ray.origin = vec3(0.0, 0.0, -2.0); // need to be uniform later
-    vec3 pixelScreenPosition = vec3( texelCoord.x / width - 0.5, texelCoord.y / height - 0.5, 0.0)
-                            * vec3(1.0, height / width, 0.0);
-    ray.direction = normalize(pixelScreenPosition - ray.origin);
-    ray.color = vec3(1.0, 1.0, 1.0);
-
-    // trace ray
-
     vec4 tracedColor = vec4(0.0);
-    for (int i = 0; i < 10; i++)
+
+     // trace ray multiple times
+    for (int i = 0; i < u_SamplePerPixel; i++)
+    {
+        // get ray
+        Ray ray;
+        ray.origin = vec3(0.0, 0.0, -2.0); // need to be uniform later
+
+        vec3 offset = vec3(randf(), randf(), 0.0) / vec3(width, height, 1.0);
+        vec3 pixelScreenPosition = (vec3( texelCoord.x / width - 0.5, texelCoord.y / height - 0.5, 0.0)
+                                    + offset) * vec3(1.0, height / width, 0.0);
+
+        ray.direction = normalize(pixelScreenPosition - ray.origin);
+        ray.color = vec3(1.0, 1.0, 1.0);
+
         tracedColor += vec4(trace(ray), 1.0);
-    tracedColor /= 10.0;
+    }
+    tracedColor /= u_SamplePerPixel;
 
     // average color over time
-    outColor = ( outColor * (u_FrameCounter - 1) + tracedColor ) / u_FrameCounter;
+    float weight = 1.0 / u_FrameCounter;
+    outColor = outColor * (1.0 - weight) + tracedColor * weight;
 
     // store pixel color
     imageStore(imgOutput, texelCoord, outColor);

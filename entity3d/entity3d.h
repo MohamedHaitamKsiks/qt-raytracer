@@ -14,12 +14,15 @@ class Entity3D
 {
 public:
     // local transform
-    QVector3D localPosition = QVector3D(0.0f, 0.0f, 0.0f);
+    QVector3D localPosition = QVector3D(0.0f, 0.0f, 3.0f);
     QQuaternion localRotation = QQuaternion::fromEulerAngles(0.0f, 0.0f, 0.0f);
     QVector3D localScale = QVector3D(1.0f, 1.0f, 1.0f);
 
+    // entity name
+    QString name = "Entity3D";
+
     // material
-    Material material;
+    Material material{};
 
     // constructors
     Entity3D();

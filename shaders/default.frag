@@ -1,7 +1,6 @@
 #version 460
 
 uniform sampler2D u_Texture;
-uniform int u_FrameCounter;
 in vec2 UV;
 out vec4 fragColor;
 

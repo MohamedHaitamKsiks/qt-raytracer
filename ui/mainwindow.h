@@ -18,6 +18,8 @@ public:
 
 private slots:
 
+    void on_addEntityButton_pressed();
+
 private:
     Ui::MainWindow *ui;
     RaytracingGLWidget* renderer = nullptr;

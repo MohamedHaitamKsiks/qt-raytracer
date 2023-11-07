@@ -11,28 +11,35 @@ CONFIG += c++17
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 SOURCES += \
+    ui/createentitypopup.cpp \
+    ui/entityitem.cpp \
+    ui/mainwindow.cpp \
+    ui/raytracingglwidget.cpp \
     entity3d/ball3d.cpp \
     entity3d/entity3d.cpp \
+    entity3d/entitymanager.cpp \
     main.cpp \
-    mainwindow.cpp \
     random.cpp \
-    raytracingglwidget.cpp \
     renderer/drawcommand.cpp \
     renderer/raytracingrenderer.cpp
 
 HEADERS += \
+    ui/createentitypopup.h \
+    ui/entityitem.h \
+    ui/mainwindow.h \
+    ui/raytracingglwidget.h \
     entity3d/ball3d.h \
     entity3d/entity3d.h \
-    mainwindow.h \
+    entity3d/entitymanager.h \
     renderer/drawcommand.h \
     renderer/material.h \
-    random.h \
     renderer/ray.h \
-    renderer/raytracingrenderer.h \
-    raytracingglwidget.h
+    renderer/raytracingrenderer.h
+    random.h
 
 FORMS += \
-    mainwindow.ui
+    ui/createentitypopup.ui \
+    ui/mainwindow.ui
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin
