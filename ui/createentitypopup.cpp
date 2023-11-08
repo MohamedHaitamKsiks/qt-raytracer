@@ -37,7 +37,7 @@ void CreateEntityPopup::on_createButton_pressed()
     Entity3D* entityParent = this->parentEntityItem->getEntity();
     Entity3D* newEntity = EntityManager::instance()->create(entityType, entityParent);
 
-    EntityItem* entityItem = new EntityItem("Entity3D", newEntity, this->parentEntityItem);
+    EntityItem* entityItem = new EntityItem(entityType, newEntity, this->parentEntityItem);
 
     // reset renderer
     RaytracingRenderer::instance()->resetRenderer();

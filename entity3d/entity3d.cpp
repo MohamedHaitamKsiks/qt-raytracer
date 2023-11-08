@@ -1,5 +1,6 @@
 #include "entity3d.h"
 #include <QTransform>
+#include <QVBoxLayout>
 
 
 Entity3D::Entity3D()
@@ -23,6 +24,15 @@ Entity3D::~Entity3D()
     {
         delete entity;
     }
+}
+
+void Entity3D::serializeFields(QLayout* layout)
+{
+    // transform
+    FieldSerializer::SerializeLayout("Local Position", this->localPosition, layout);
+
+    // material
+    FieldSerializer::SerializeLayout("Material", this->material, layout);
 }
 
 Entity3D* Entity3D::addChild(Entity3D* entity)

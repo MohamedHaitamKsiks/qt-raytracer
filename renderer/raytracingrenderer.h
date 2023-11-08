@@ -53,7 +53,9 @@ public:
     // reset renderer
     inline void resetRenderer()
     {
-        frameCounter = 1;
+        this->destroyCanvasTexture();
+        this->createCanvasTexture();
+        this->frameCounter = 0;
     }
 
 

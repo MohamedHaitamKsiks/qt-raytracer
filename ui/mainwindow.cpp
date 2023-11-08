@@ -12,10 +12,14 @@ MainWindow::MainWindow(QWidget *parent)
     ui->setupUi(this);
 
     // add rendering context
-    renderer = new RaytracingGLWidget(ui->centralwidget);
-    renderer->show();
+    this->renderer = new RaytracingGLWidget(ui->centralwidget);
+    this->renderer->show();
+    ui->centralwidget->layout()->addWidget(this->renderer);
 
-    ui->centralwidget->layout()->addWidget(renderer);
+    // add insepector widget
+    this->inspector = new InspectorWidget(ui->centralwidget);
+    this->inspector->show();
+    ui->centralwidget->layout()->addWidget(this->inspector);
 
     // create root item for scene
     EntityItem* rootItem = new EntityItem("Root", RaytracingRenderer::instance()->getSceneRoot(), ui->sceneTreeWidget);
@@ -36,5 +40,19 @@ void MainWindow::on_addEntityButton_pressed()
     CreateEntityPopup* popup = new CreateEntityPopup(currentItem, ui->centralwidget);
     popup->exec();
     delete popup;
+}
+
+
+void MainWindow::on_sceneTreeWidget_itemChanged(QTreeWidgetItem *item, int column)
+{
+    //EntityItem* entityItem = dynamic_cast<EntityItem*>(item);
+    //this->inspector->inspectEntity(entityItem->getEntity());
+}
+
+
+void MainWindow::on_sceneTreeWidget_currentItemChanged(QTreeWidgetItem *current, QTreeWidgetItem *previous)
+{
+    EntityItem* entityItem = dynamic_cast<EntityItem*>(current);
+    this->inspector->inspectEntity(entityItem->getEntity());
 }
 

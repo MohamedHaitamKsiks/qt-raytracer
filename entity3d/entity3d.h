@@ -6,7 +6,9 @@
 #include <QQuaternion>
 #include <QMatrix4x4>
 #include <QColor>
+#include <QLayout>
 
+#include "ui/fieldserializer.h"
 #include "renderer/material.h"
 
 // tree same as godot nodes
@@ -30,6 +32,9 @@ public:
 
     // destructor
     virtual ~Entity3D();
+
+    // serialize fields
+    virtual void serializeFields(QLayout* layout);
 
     // update
     void update();

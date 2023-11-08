@@ -6,6 +6,12 @@ Ball3D::Ball3D()
 
 }
 
+void Ball3D::serializeFields(QLayout* layout)
+{
+    Entity3D::serializeFields(layout);
+    FieldSerializer::SerializeLayout("Radius", this->radius, layout);
+
+}
 
 void Ball3D::draw()
 {

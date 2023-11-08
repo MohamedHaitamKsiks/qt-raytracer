@@ -16,6 +16,9 @@ public:
     {
     };
 
+    // serialize fields
+    void serializeFields(QLayout* layout);
+
 private:
     void draw();
 

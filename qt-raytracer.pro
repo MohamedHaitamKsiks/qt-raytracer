@@ -13,6 +13,8 @@ CONFIG += c++17
 SOURCES += \
     ui/createentitypopup.cpp \
     ui/entityitem.cpp \
+    ui/fieldserializer.cpp \
+    ui/inspectorwidget.cpp \
     ui/mainwindow.cpp \
     ui/raytracingglwidget.cpp \
     entity3d/ball3d.cpp \
@@ -26,6 +28,8 @@ SOURCES += \
 HEADERS += \
     ui/createentitypopup.h \
     ui/entityitem.h \
+    ui/fieldserializer.h \
+    ui/inspectorwidget.h \
     ui/mainwindow.h \
     ui/raytracingglwidget.h \
     entity3d/ball3d.h \
@@ -39,6 +43,7 @@ HEADERS += \
 
 FORMS += \
     ui/createentitypopup.ui \
+    ui/inspectorwidget.ui \
     ui/mainwindow.ui
 
 # Default rules for deployment.

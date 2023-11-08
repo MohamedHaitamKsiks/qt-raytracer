@@ -20,40 +20,6 @@ RaytracingRenderer::RaytracingRenderer()
     this->sceneRoot = new Entity3D();
     this->sceneRoot->localPosition = QVector3D(0.0f, 0.0f, 0.0f);
 
-    // fill scene
-    {
-        auto* ball = dynamic_cast<Ball3D*>(EntityManager::instance()->create("Ball3D", sceneRoot));
-        ball->localPosition = QVector3D(0,-30.2,4);
-        ball->radius = 30.0f;
-        ball->material.smoothness = 0.0f;
-        ball->material.color = QVector3D(0.333, 0.0, 1.0);
-
-        auto* ball1 = dynamic_cast<Ball3D*>(EntityManager::instance()->create("Ball3D", sceneRoot));
-        ball1->localPosition = QVector3D(5.8f,2.8f,-8.0f);
-        ball1->radius = 10.3f;
-        ball1->material.smoothness = 1.0f;
-        ball1->material.emissive = true;
-        ball1->material.color = QVector3D(1.0f, 1.0f, 1.0f) * 10.0f;
-
-        /*auto* ball2 = dynamic_cast<Ball3D*>(EntityManager::instance()->create("Ball3D", sceneRoot));
-        ball2->localPosition = QVector3D(0.3f,0.1f,2.0f);
-        ball2->radius = 0.3f;
-        ball2->material.smoothness = 0.0f;
-        ball2->material.color = QVector3D(1.0, 0.552, 0.0400);
-
-        auto* ball3 = dynamic_cast<Ball3D*>(EntityManager::instance()->create("Ball3D", sceneRoot));
-        ball3->localPosition = QVector3D(-0.35f,0.1f,2.5f);
-        ball3->radius = 0.3f;
-        ball3->material.smoothness = 1.0f;
-        ball3->material.color = QVector3D(1.0, 1.0,1.0);
-
-        auto* ball4 = dynamic_cast<Ball3D*>(EntityManager::instance()->create("Ball3D", sceneRoot));
-        ball4->localPosition = QVector3D(-0.8f,0.0f,1.5f);
-        ball4->radius = 0.2f;
-        ball4->material.smoothness = 1.0f;
-        ball4->material.color = QVector3D(0.8f, 0.8f, 0.8f);*/
-    }
-
 }
 
 void RaytracingRenderer::init()

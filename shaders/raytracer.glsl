@@ -116,7 +116,7 @@ vec3 getSkyBoxColor(in Ray ray)
     // get contribution of each sky color
     float skyContribution = sigmoid(skyPosition, 0.001, 500.0);
     float groundContribution = sigmoid(skyPosition, -0.001, -500.0);
-    float horizonContribution = sigmoidDeriv(skyPosition, 0.0, 50.0) * 3.0;
+    float horizonContribution = sigmoidDeriv(skyPosition, 0.0, 150.0) * 2.0;
 
     // return sky box color
     return skyContribution * skyColor + horizonContribution * horizonColor + groundContribution * groundColor;
