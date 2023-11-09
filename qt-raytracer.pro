@@ -11,6 +11,7 @@ CONFIG += c++17
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 SOURCES += \
+    entity3d/sceneroot.cpp \
     ui/createentitypopup.cpp \
     ui/entityitem.cpp \
     ui/fieldserializer.cpp \
@@ -26,6 +27,7 @@ SOURCES += \
     renderer/raytracingrenderer.cpp
 
 HEADERS += \
+    entity3d/sceneroot.h \
     ui/createentitypopup.h \
     ui/entityitem.h \
     ui/fieldserializer.h \

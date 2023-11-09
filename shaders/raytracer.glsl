@@ -76,13 +76,18 @@ float randf()
     return randi() / 4294967296.0;
 }
 
+float randRange(float min, float max)
+{
+    return (max - min) * randf() + min;
+}
+
 // get random in uni sphere
 vec3 randInUniSphere()
 {
     vec3 randomVector = vec3(0.0, 0.0, 0.0);
     for (int i = 0; i < UNI_SPHERE_MAX_ITER; i++)
     {
-        randomVector = vec3(randf(), randf(), randf());
+        randomVector = vec3(randRange(-1.0, 1.0), randRange(-1.0, 1.0), randRange(-1.0, 1.0));
         if ( length(randomVector) <= 1.0)
             break;
 
@@ -108,7 +113,7 @@ vec3 getSkyBoxColor(in Ray ray)
     // get base colors
     vec3 skyColor = vec3(0.5, 0.8, 1.0);
     vec3 horizonColor = vec3(1.0, 1.0, 1.0);
-    vec3 groundColor = vec3(0.2, 0.2, 0.4);
+    vec3 groundColor =  vec3(0.2, 0.2, 0.4);
 
     // get sky position from ray
     float skyPosition = ray.direction.y;
@@ -193,7 +198,7 @@ vec3 trace(in Ray ray)
         vec3 specularDir = reflect(ray.direction, hitInfo.normal);
 
         // get random direction
-        vec3 diffuseDir = randInUniSphere();
+        vec3 diffuseDir = normalize(hitInfo.normal + randInUniSphere());
         // check correct hemisphere
         if (dot(hitInfo.normal, diffuseDir) < 0.0)
             diffuseDir *= -1.0;

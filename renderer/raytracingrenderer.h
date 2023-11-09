@@ -66,7 +66,7 @@ private:
     Entity3D* sceneRoot = nullptr;
 
     // ray tracer config
-    int rayMaxBounce = 5;
+    int rayMaxBounce = 10;
     int samplerPerPixel = 2;
 
     // cache uniform locations

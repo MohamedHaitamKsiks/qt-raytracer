@@ -30,6 +30,8 @@ void Entity3D::serializeFields(QLayout* layout)
 {
     // transform
     FieldSerializer::SerializeLayout("Local Position", this->localPosition, layout);
+    FieldSerializer::SerializeLayout("Local Rotation", this->localRotation, layout);
+    FieldSerializer::SerializeLayout("Local Scale", this->localScale, layout);
 
     // material
     FieldSerializer::SerializeLayout("Material", this->material, layout);
@@ -45,7 +47,7 @@ Entity3D* Entity3D::addChild(Entity3D* entity)
 QMatrix4x4 Entity3D::getLocalTransform()
 {
     QMatrix4x4 rotation{};
-    rotation.rotate(localRotation);
+    rotation.rotate(QQuaternion::fromEulerAngles(localRotation));
 
     QMatrix4x4 scale{};
     scale.scale(localScale);
