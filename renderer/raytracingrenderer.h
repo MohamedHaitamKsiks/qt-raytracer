@@ -11,6 +11,7 @@
 #include <QOpenGLFunctions_4_3_Core>
 
 #include "entity3d/entity3d.h"
+#include "entity3d/sceneroot.h"
 #include "drawcommand.h"
 
 // raytracing renderer singleton
@@ -45,7 +46,7 @@ public:
     }
 
     // get scene root
-    inline Entity3D* getSceneRoot()
+    inline SceneRoot* getSceneRoot()
     {
         return sceneRoot;
     }
@@ -63,17 +64,16 @@ private:
     static RaytracingRenderer* s_Instance;
 
     // scene root
-    Entity3D* sceneRoot = nullptr;
-
-    // ray tracer config
-    int rayMaxBounce = 10;
-    int samplerPerPixel = 2;
+    SceneRoot* sceneRoot = nullptr;
 
     // cache uniform locations
     int frameCounterLocation;
     int sphereCommandCountLocation;
     int samplePerPixelLocation;
     int rayMaxBounceLocation;
+    int skyColorLocation;
+    int horizonColorLocation;
+    int groundColorLocation;
 
     //gl functions
     QOpenGLFunctions_4_3_Core glFunctions{};

@@ -17,7 +17,7 @@ RaytracingRenderer::RaytracingRenderer()
     s_Instance = this;
 
     // create scene
-    this->sceneRoot = new Entity3D();
+    this->sceneRoot = new SceneRoot();
     this->sceneRoot->localPosition = QVector3D(0.0f, 0.0f, 0.0f);
 
 }
@@ -38,6 +38,9 @@ void RaytracingRenderer::init()
     this->sphereCommandCountLocation = this->computeProgram->uniformLocation("u_SphereCommandCount");
     this->samplePerPixelLocation = this->computeProgram->uniformLocation("u_SamplePerPixel");
     this->rayMaxBounceLocation =this->computeProgram->uniformLocation("u_RayMaxBounce");
+    this->skyColorLocation = this->computeProgram->uniformLocation("u_SkyColor");
+    this->horizonColorLocation = this->computeProgram->uniformLocation("u_HorizonColor");
+    this->groundColorLocation = this->computeProgram->uniformLocation("u_GroundColor");
 
     // create data on gpu
     this->createCanvasTexture();
@@ -86,9 +89,14 @@ void RaytracingRenderer::draw(QOpenGLContext* context, int width, int height)
 
     // send unigform values
     this->computeProgram->setUniformValue(this->frameCounterLocation, this->frameCounter);
-    this->computeProgram->setUniformValue(this->sphereCommandCountLocation,(int) this->sphereCommands.size());
-    this->computeProgram->setUniformValue(this->samplePerPixelLocation,(int) this->samplerPerPixel);
-    this->computeProgram->setUniformValue(this->rayMaxBounceLocation,(int) this->rayMaxBounce);
+    this->computeProgram->setUniformValue(this->sphereCommandCountLocation, static_cast<int>(this->sphereCommands.size()));
+
+    this->computeProgram->setUniformValue(this->rayMaxBounceLocation,this->sceneRoot->getRayMaxBounce());
+    this->computeProgram->setUniformValue(this->samplePerPixelLocation, this->sceneRoot->getSamplerPerPixel());
+
+    this->computeProgram->setUniformValue(this->skyColorLocation,this->sceneRoot->getSkyColor());
+    this->computeProgram->setUniformValue(this->horizonColorLocation, this->sceneRoot->getHorizonColor());
+    this->computeProgram->setUniformValue(this->groundColorLocation,this->sceneRoot->getGroundColor());
 
     // start compute
     this->glFunctions.glDispatchCompute(width, height, 1);

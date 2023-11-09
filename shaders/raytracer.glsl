@@ -55,6 +55,10 @@ uniform int u_FrameCounter; // current frame number;
 uniform int u_SphereCommandCount;
 uniform int u_RayMaxBounce;
 uniform int u_SamplePerPixel;
+// skybox colors
+uniform vec3 u_SkyColor;
+uniform vec3 u_HorizonColor;
+uniform vec3 u_GroundColor;
 
 
 // global variables
@@ -110,11 +114,6 @@ float sigmoidDeriv(float t, float offset, float steepness)
 // sky color
 vec3 getSkyBoxColor(in Ray ray)
 {
-    // get base colors
-    vec3 skyColor = vec3(0.5, 0.8, 1.0);
-    vec3 horizonColor = vec3(1.0, 1.0, 1.0);
-    vec3 groundColor =  vec3(0.2, 0.2, 0.4);
-
     // get sky position from ray
     float skyPosition = ray.direction.y;
 
@@ -124,7 +123,7 @@ vec3 getSkyBoxColor(in Ray ray)
     float horizonContribution = sigmoidDeriv(skyPosition, 0.0, 150.0) * 2.0;
 
     // return sky box color
-    return skyContribution * skyColor + horizonContribution * horizonColor + groundContribution * groundColor;
+    return skyContribution * u_SkyColor + horizonContribution * u_HorizonColor + groundContribution * u_GroundColor;
 }
 
 // sphere on hit
