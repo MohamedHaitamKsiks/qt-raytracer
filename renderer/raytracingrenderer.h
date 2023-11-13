@@ -9,6 +9,7 @@
 #include <vector>
 
 #include <QOpenGLFunctions_4_3_Core>
+#include <QHash>
 
 #include "entity3d/entity3d.h"
 #include "entity3d/sceneroot.h"
@@ -56,7 +57,31 @@ public:
     {
         this->destroyCanvasTexture();
         this->createCanvasTexture();
-        this->frameCounter = 0;
+        this->frameCounter = 1;
+    }
+
+    // load mesh from file
+    void loadMesh(const QString& meshPath);
+
+    // load file from vertex files
+    void loadMesh(const QString& meshName, const QVector<Vertex>& vertices, QVector<int> indices);
+
+    // get mesh index
+    inline int getMeshIndex(const QString& meshPath) const
+    {
+        return this->meshIndices[meshPath];
+    }
+
+    // draw mesh
+    inline void drawMesh(const MeshInstanceCommand& command)
+    {
+        this->meshInstanceCommands.append(command);
+    }
+
+    // get mesh indies
+    inline const QHash<QString, int>& getMeshIndices() const
+    {
+        return this->meshIndices;
     }
 
 
@@ -66,9 +91,16 @@ private:
     // scene root
     SceneRoot* sceneRoot = nullptr;
 
+    // mesh
+    QHash<QString, int> meshIndices{};
+    int meshCount = 0;
+    int lastMeshIndex = 0;
+    int vertexCount = 0;
+
     // cache uniform locations
     int frameCounterLocation;
     int sphereCommandCountLocation;
+    int meshInstanceCommandCountLocation;
     int samplePerPixelLocation;
     int rayMaxBounceLocation;
     int skyColorLocation;
@@ -83,9 +115,14 @@ private:
 
     // draw command list
     QVector<SphereCommand> sphereCommands{};
+    QVector<MeshInstanceCommand> meshInstanceCommands{};
 
     // sphere command buffer
     uint32_t sphereCommandsBufferObject;
+    uint32_t meshInstanceCommandsBufferObject;
+    uint32_t meshInfosBufferObject;
+    uint32_t vertexBufferObject;
+    uint32_t indexBufferObject;
 
     // frame counter
     int frameCounter = 1;
@@ -102,6 +139,12 @@ private:
 
     // destroy texture
     void destroyCanvasTexture();
+
+    // create shader buffer
+    void createShaderBuffer(uint32_t& buffer, uint32_t binding, size_t size);
+
+    // bind shader buffer
+    void bindShaderBuffer(uint32_t buffer);
 
     // create all  command buffers
     void createCommandBuffers();

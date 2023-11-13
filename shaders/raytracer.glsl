@@ -9,6 +9,20 @@ layout (local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
 
 // data types
 
+// vertex 3d
+struct Vertex
+{
+    vec3 position;
+    vec3 normal;
+};
+
+// mesh 3d info
+struct MeshInfo
+{
+    int startIndex;
+    int vertexCount;
+};
+
 // material
 struct Material
 {
@@ -22,6 +36,14 @@ struct SphereCommand
 {
     vec3 center;
     float radius;
+    Material material;
+};
+
+// mesh instance command
+struct MeshInstanceCommand
+{
+    int meshIndex;
+    float transform[16];
     Material material;
 };
 
@@ -46,13 +68,32 @@ struct RayHitInfo
 
 // sphere command buffer
 layout(std430, binding = 3) readonly buffer sphereCommandsBuffer {
-    SphereCommand commands[];
+    SphereCommand shpereCommands[];
+};
+
+layout(std430, binding = 4) readonly buffer meshInstanceCommandsBuffer {
+    MeshInstanceCommand meshInstanceCommands[];
+};
+
+layout(std430, binding = 5) readonly buffer meshInfosBuffer {
+    MeshInfo meshInfos[];
+};
+
+layout(std430, binding = 6) readonly buffer vertexBuffer {
+    Vertex vertices[];
+};
+
+layout(std430, binding = 7) readonly buffer indexBuffer {
+    int indices[];
 };
 
 
 // uniforms
 uniform int u_FrameCounter; // current frame number;
+// command counts
 uniform int u_SphereCommandCount;
+uniform int u_MeshInstanceCommandCount;
+// settings
 uniform int u_RayMaxBounce;
 uniform int u_SamplePerPixel;
 // skybox colors
@@ -126,6 +167,13 @@ vec3 getSkyBoxColor(in Ray ray)
     return skyContribution * u_SkyColor + horizonContribution * u_HorizonColor + groundContribution * u_GroundColor;
 }
 
+// copy rayhit info if new hit point is closer
+void copyRayHitInfo(in RayHitInfo from, inout RayHitInfo to)
+{
+    if (from.hit && (!to.hit || from.depth < to.depth))
+        to = from;
+}
+
 // sphere on hit
 RayHitInfo sphereOnHit(in SphereCommand command, in Ray ray)
 {
@@ -159,6 +207,111 @@ RayHitInfo sphereOnHit(in SphereCommand command, in Ray ray)
     return hitInfo;
 }
 
+// transform vertex
+void transformVertex(inout Vertex vertex, mat4 transform, mat3 normalTransform)
+{
+    vertex.position = vec3(transform * vec4(vertex.position, 1.0));
+    vertex.normal = normalTransform * vertex.normal;
+}
+
+// triangle abc on hit
+RayHitInfo triangleOnHit(in Vertex a, in Vertex b, in Vertex c, in Ray ray)
+{
+    RayHitInfo hitInfo;
+    hitInfo.hit = false;
+
+    // precision
+    const float PRECISION = 0.0001;
+
+    // check ray collide with surface defined by trinagle
+    vec3 surfaceNormal = cross(b.position - a.position, c.position - a.position);
+    if (abs(dot(surfaceNormal, ray.direction)) < PRECISION)
+        return hitInfo;
+
+
+    // we can express a point in ABC by the barycentric coordinates P = w * a + u * b + v * c where w + u + v = 1
+    // then w = 1 - u - v
+    // then P = a + u * (b - a) + v * (c - a)
+    // for P the intersection between the ray and the triangle
+    // we have O + D * t = a + u * (b - a) + v * (c - a)
+    // then D * t + (a - b) * u + (a - c) * v = a - O
+    // or D * t + AB * u + AC * v = AO
+    vec3 D = ray.direction;
+    vec3 AB = a.position - b.position;
+    vec3 AC = a.position - c.position;
+    vec3 AO = a.position - ray.origin;
+
+    // let's solve the equation
+    float t = dot(AO, surfaceNormal) / dot(D, surfaceNormal);
+
+    vec3 H = cross(AC, D);
+    float u = dot(AO, H) / dot(AB, H);
+
+    float v = dot(AO - D * t - AB * u, AC) / dot(AC, AC);
+
+    // check if point is inside triangle and t is positive
+    if ( t < PRECISION || u + v > 1.0 || u < 0.0 || v < 0.0 || u > 1.0 || v > 1.0)
+        return hitInfo;
+
+    // get hit info
+    hitInfo.hit = true;
+    hitInfo.depth = t;
+    hitInfo.normal = normalize(-surfaceNormal);//normalize(a.normal * (1 - u - v) + b.normal * u + c.normal * v);
+    hitInfo.position = ray.origin + ray.direction * t;
+
+    return hitInfo;
+}
+
+// mesh instance on hit
+RayHitInfo meshInstanceOnHit(in MeshInstanceCommand command, in Ray ray)
+{
+    RayHitInfo hitInfo;
+    hitInfo.hit = false;
+
+    // cache normal transform
+    mat4 transform = mat4(1.0);
+    for (int j = 0; j < 4; j++)
+    {
+        for (int i = 0; i < 4; i++)
+            transform[i][j] = command.transform[j * 4 + i];
+    }
+
+    mat3 normalTransform = mat3(transpose(inverse(transform)));
+
+    // get mesh
+    MeshInfo info = meshInfos[command.meshIndex];
+
+    // hit all triangles in mesh
+    for (int i = info.startIndex; i < info.vertexCount; i += 3)
+    {
+        // get indices
+        int indexA = indices[i];
+        int indexB = indices[i + 1];
+        int indexC = indices[i + 2];
+
+        // get triangle
+        Vertex vertexA = vertices[indexA];
+        Vertex vertexB = vertices[indexB];
+        Vertex vertexC = vertices[indexC];
+
+        // apply transform
+        transformVertex(vertexA, transform, normalTransform);
+        transformVertex(vertexB, transform, normalTransform);
+        transformVertex(vertexC, transform, normalTransform);
+
+        // test hit on triangle
+        copyRayHitInfo(triangleOnHit(vertexA, vertexB, vertexC, ray), hitInfo);
+
+    }
+
+    if(hitInfo.hit)
+    {
+        hitInfo.material = command.material;
+    }
+
+    return hitInfo;
+}
+
 // trace ray
 vec3 trace(in Ray ray)
 {
@@ -170,14 +323,19 @@ vec3 trace(in Ray ray)
         RayHitInfo hitInfo;
         hitInfo.hit = false;
 
-
         // process all draw commands
+        // sphere commands
         for (int i = 0; i < u_SphereCommandCount; i++)
         {
-            RayHitInfo newHitInfo = sphereOnHit(commands[i], ray);
-            if (newHitInfo.hit && (!hitInfo.hit || newHitInfo.depth < hitInfo.depth))
-                hitInfo = newHitInfo;
+            copyRayHitInfo(sphereOnHit(shpereCommands[i], ray), hitInfo);
         }
+
+        // mesh command
+        for (int i = 0; i < u_MeshInstanceCommandCount; i++)
+        {
+            copyRayHitInfo(meshInstanceOnHit(meshInstanceCommands[i], ray), hitInfo);
+        }
+
 
         // check for collision
         if (! hitInfo.hit)
@@ -253,7 +411,11 @@ void main() {
 
     // average color over time
     float weight = 1.0 / u_FrameCounter;
-    outColor = outColor * (1.0 - weight) + tracedColor * weight;
+
+    if (u_FrameCounter == 1)
+        outColor = tracedColor;
+    else
+        outColor = outColor * (1.0 - weight) + tracedColor * weight;
 
     // store pixel color
     imageStore(imgOutput, texelCoord, outColor);
