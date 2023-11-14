@@ -73,9 +73,6 @@ RaytracingRenderer::~RaytracingRenderer()
 
 void RaytracingRenderer::draw(QOpenGLContext* context, int width, int height)
 {
-    // increment frame counter
-    this->frameCounter++;
-
     // update scene
     this->sceneRoot->update();
 
@@ -112,8 +109,10 @@ void RaytracingRenderer::draw(QOpenGLContext* context, int width, int height)
     this->computeProgram->setUniformValue(this->horizonColorLocation, this->sceneRoot->getHorizonColor());
     this->computeProgram->setUniformValue(this->groundColorLocation,this->sceneRoot->getGroundColor());
 
+    // RENDERING!!!
+
     // start compute
-    this->glFunctions.glDispatchCompute(width, height, 1);
+    this->glFunctions.glDispatchCompute(this->canvasWidth, this->canvasHeight, 1);
 
     // wait for compute shader to finish
     this->glFunctions.glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
@@ -121,6 +120,9 @@ void RaytracingRenderer::draw(QOpenGLContext* context, int width, int height)
     // clear commands
     this->sphereCommands.clear();
     this->meshInstanceCommands.clear();
+
+    // increment frame counter
+    this->frameCounter++;
 }
 
 void RaytracingRenderer::createCanvasTexture()

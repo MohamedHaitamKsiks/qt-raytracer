@@ -243,14 +243,16 @@ RayHitInfo triangleOnHit(in Vertex a, in Vertex b, in Vertex c, in Ray ray)
 
     // let's solve the equation
     float t = dot(AO, surfaceNormal) / dot(D, surfaceNormal);
+    if ( t < PRECISION)
+        return hitInfo;
 
     vec3 H = cross(AC, D);
     float u = dot(AO, H) / dot(AB, H);
 
     float v = dot(AO - D * t - AB * u, AC) / dot(AC, AC);
 
-    // check if point is inside triangle and t is positive
-    if ( t < PRECISION || u + v > 1.0 || u < 0.0 || v < 0.0 || u > 1.0 || v > 1.0)
+    // check if point is inside triangle
+    if (u + v > 1.0 || u < 0.0 || v < 0.0 || u > 1.0 || v > 1.0)
         return hitInfo;
 
     // get hit info
@@ -339,7 +341,11 @@ vec3 trace(in Ray ray)
 
         // check for collision
         if (! hitInfo.hit)
+        {
+            lightColor += ray.color * getSkyBoxColor(ray);
             break;
+        }
+
 
         // emissive material
         if (hitInfo.material.emissive)
@@ -369,7 +375,7 @@ vec3 trace(in Ray ray)
     }
 
     // return computed color
-    return lightColor + ray.color * getSkyBoxColor(ray);
+    return lightColor;
 };
 
 // output image
@@ -412,7 +418,7 @@ void main() {
     // average color over time
     float weight = 1.0 / u_FrameCounter;
 
-    if (u_FrameCounter == 1)
+    if (u_FrameCounter <= 1)
         outColor = tracedColor;
     else
         outColor = outColor * (1.0 - weight) + tracedColor * weight;
