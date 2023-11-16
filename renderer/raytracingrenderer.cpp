@@ -56,6 +56,8 @@ void RaytracingRenderer::init()
     this->skyColorLocation = this->computeProgram->uniformLocation("u_SkyColor");
     this->horizonColorLocation = this->computeProgram->uniformLocation("u_HorizonColor");
     this->groundColorLocation = this->computeProgram->uniformLocation("u_GroundColor");
+    this->cameraTransformLocation = this->computeProgram->uniformLocation("u_CameraTransform");
+    this->cameraFOVLocation = this->computeProgram->uniformLocation("u_CameraFOV");
 
     // create data on gpu
     this->createCanvasTexture();
@@ -100,6 +102,9 @@ void RaytracingRenderer::draw(QOpenGLContext* context, int width, int height)
     this->glFunctions.glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, this->meshInstanceCommands.size() * sizeof(MeshInstanceCommand), this->meshInstanceCommands.data());
 
     // send unigform values
+    this->computeProgram->setUniformValue(this->cameraTransformLocation, this->sceneRoot->getCameraTransform());
+    this->computeProgram->setUniformValue(this->cameraFOVLocation, this->sceneRoot->getCameraFOV() * static_cast<float>(M_PI) / 180.0f); // from rad to float;
+
     this->computeProgram->setUniformValue(this->frameCounterLocation, this->frameCounter);
     this->computeProgram->setUniformValue(this->sphereCommandCountLocation, static_cast<int>(this->sphereCommands.size()));
     this->computeProgram->setUniformValue(this->meshInstanceCommandCountLocation, static_cast<int>(this->meshInstanceCommands.size()));

@@ -29,6 +29,8 @@ struct Material
     vec3 color;
     float smoothness;
     bool emissive;
+    float refraction;
+    float transparency;
 };
 
 //draw commands
@@ -100,6 +102,9 @@ uniform int u_SamplePerPixel;
 uniform vec3 u_SkyColor;
 uniform vec3 u_HorizonColor;
 uniform vec3 u_GroundColor;
+// camera
+uniform mat4 u_CameraTransform;
+uniform float u_CameraFOV;
 
 
 // global variables
@@ -221,7 +226,7 @@ RayHitInfo triangleOnHit(in Vertex a, in Vertex b, in Vertex c, in Ray ray)
     hitInfo.hit = false;
 
     // precision
-    const float PRECISION = 0.0001;
+    const float PRECISION = 0.001;
 
     // check ray collide with surface defined by trinagle
     vec3 surfaceNormal = cross(b.position - a.position, c.position - a.position);
@@ -353,21 +358,47 @@ vec3 trace(in Ray ray)
             break;
         }
 
+        // refract or reflect depending on transparency index
+        // check if refractionRatio * sin(thetha2) > 1.0 then we mus reflect
+
+        // get cos and sin of theta 2
+        float cos_theta = min(dot(-ray.direction, hitInfo.normal), 1.0);
+        float sin_theta = sqrt(1.0 - cos_theta * cos_theta);
+
+        // get refraction ratio
+        bool frontFace = dot(ray.direction, hitInfo.normal) < 0.0;
+        float refractionRatio = (frontFace) ? (1.0 / hitInfo.material.refraction) : hitInfo.material.refraction;
+
+        // reflect
+        if (refractionRatio * sin_theta > 1.0 || randf() > hitInfo.material.transparency)
+        {
+            // get specular direction
+            vec3 specularDir = reflect(ray.direction, hitInfo.normal);
+
+            // get random direction
+            vec3 diffuseDir = normalize(hitInfo.normal + randInUniSphere());
+            // check correct hemisphere
+            if (dot(hitInfo.normal, diffuseDir) < 0.0)
+                diffuseDir *= -1.0;
+            diffuseDir = normalize(hitInfo.normal + diffuseDir);
+
+            // get actual bounce direction
+            ray.direction = (specularDir - diffuseDir) * hitInfo.material.smoothness + diffuseDir;
+        }
+        // refract
+        else
+        {
+            // apply Snell's law
+            // n1 * sin(theta1) = n2 * sin(theta2)
+            vec3 r_out_perp =  refractionRatio * (ray.direction + cos_theta * hitInfo.normal);
+            vec3 r_out_parallel = -sqrt(abs(1.0 - dot(r_out_perp, r_out_perp))) * hitInfo.normal;
+            if (!frontFace)
+                r_out_parallel *= -1.0;
+            ray.direction = normalize(r_out_perp + r_out_parallel);
+
+        }
         // bounce ray
         ray.origin = hitInfo.position;
-
-        // get specular direction
-        vec3 specularDir = reflect(ray.direction, hitInfo.normal);
-
-        // get random direction
-        vec3 diffuseDir = normalize(hitInfo.normal + randInUniSphere());
-        // check correct hemisphere
-        if (dot(hitInfo.normal, diffuseDir) < 0.0)
-            diffuseDir *= -1.0;
-        diffuseDir = normalize(hitInfo.normal + diffuseDir);
-
-        // get actual bounce direction
-        ray.direction = (specularDir - diffuseDir) * hitInfo.material.smoothness + diffuseDir;
 
         // bouce ray color
         ray.color *= hitInfo.material.color;
@@ -401,11 +432,11 @@ void main() {
     {
         // get ray
         Ray ray;
-        ray.origin = vec3(0.0, 0.0, -2.0); // need to be uniform later
+        ray.origin = vec3(u_CameraTransform * vec4(0.0, 0.0, -1.0 / tan(u_CameraFOV * 0.5), 1.0)); // need to be uniform later
 
         vec3 offset = vec3(randf(), randf(), 0.0) / vec3(width, height, 1.0);
-        vec3 pixelScreenPosition = (vec3( texelCoord.x / width - 0.5, texelCoord.y / height - 0.5, 0.0)
-                                    + offset) * vec3(1.0, height / width, 0.0);
+        vec3 pixelScreenPosition = vec3(u_CameraTransform * vec4((vec3( texelCoord.x / width - 0.5, texelCoord.y / height - 0.5, 0.0)
+                                    + offset) * vec3(1.0, height / width, 0.0), 1.0));
 
         ray.direction = normalize(pixelScreenPosition - ray.origin);
         ray.color = vec3(1.0, 1.0, 1.0);

@@ -8,6 +8,8 @@ struct Material
     QVector3D color{0.2f, 0.2f, 0.2f};
     float smoothness = 0.0f;
     int emissive = 0;
+    float refraction = 1.0f;
+    float transparency = 0.0f;
 };
 
 

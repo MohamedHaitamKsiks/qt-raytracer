@@ -107,6 +107,8 @@ private:
     int skyColorLocation;
     int horizonColorLocation;
     int groundColorLocation;
+    int cameraTransformLocation;
+    int cameraFOVLocation;
 
     //gl functions
     QOpenGLFunctions_4_3_Core glFunctions{};

@@ -131,6 +131,9 @@ QWidget* FieldSerializer::Serialize<Material>(const QString& fieldName, Material
     FieldSerializer::SerializeLayout("Smoothenss", field.smoothness, layout);
     FieldSerializer::SerializeLayout("Color", field.color, layout);
 
+    FieldSerializer::SerializeLayout("Refraction", field.refraction, layout);
+    FieldSerializer::SerializeLayout("Transparency", field.transparency, layout);
+
     return widget;
 }
 
