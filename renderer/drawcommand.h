@@ -19,7 +19,16 @@ struct SphereCommand
 struct Vertex
 {
     QVector3D position{};
+    float PADDING;
     QVector3D normal{};
+
+    Vertex(const QVector3D& position, const QVector3D& normal)
+    {
+        this->position = position;
+        this->normal = normal;
+    }
+
+    Vertex() {};
 } GL_STRUCT;
 
 // mesh 3d info
@@ -27,7 +36,7 @@ struct MeshInfo
 {
     int startIndex = 0;
     int vertexCount = 0;
-} GL_STRUCT;
+} ;
 
 // mesh instance
 struct MeshInstanceCommand

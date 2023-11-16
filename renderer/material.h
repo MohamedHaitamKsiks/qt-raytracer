@@ -6,7 +6,7 @@
 struct Material
 {
     QVector3D color{0.2f, 0.2f, 0.2f};
-    float smoothness = 1.0f;
+    float smoothness = 0.0f;
     int emissive = 0;
 };
 

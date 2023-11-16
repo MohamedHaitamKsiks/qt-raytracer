@@ -12,9 +12,10 @@ int main(int argc, char *argv[])
 {
     // init entity manager
     EntityManager* entityManager = new EntityManager();
+    // register entity types
     entityManager->registerEntity<Entity3D>("Entity3D");
     entityManager->registerEntity<Ball3D>("Ball3D");
-    //entityManager->registerEntity<MeshInstance3D>("MeshInstance3D");
+    entityManager->registerEntity<MeshInstance3D>("MeshInstance3D");
     entityManager->registerEntity<Cube3D>("Cube3D");
 
     // create application

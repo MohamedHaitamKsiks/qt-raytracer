@@ -60,9 +60,19 @@ void RaytracingGLWidget::initializeGL()
     this->renderer->init();
 
     // init update
-    connect(&timer, SIGNAL(timeout()), this, SLOT(update()));
+    QTimer::connect(&this->timer, &QTimer::timeout, this, [this] (){
+        if (this->isRendering) return;
+
+        std::async([this] ()
+        {
+            this->update();
+            this->isRendering = false;
+        });
+
+    });
     timer.start(0);
 }
+
 
 void RaytracingGLWidget::createVbo()
 {

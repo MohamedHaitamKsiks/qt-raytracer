@@ -30,6 +30,10 @@ private:
     // renderer
     RaytracingRenderer* renderer = nullptr;
 
+    // renderer state
+    bool isRendering = false;
+    std::thread* renderThread = nullptr;
+
     // view port
     QRect viewport;
     int width = 0;

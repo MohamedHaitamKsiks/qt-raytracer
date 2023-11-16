@@ -4,7 +4,7 @@
 #define UNI_SPHERE_MAX_ITER 100
 
 // compute shader layout
-layout (local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
+layout (local_size_x = 8, local_size_y = 4, local_size_z = 1) in;
 
 
 // data types
@@ -258,7 +258,7 @@ RayHitInfo triangleOnHit(in Vertex a, in Vertex b, in Vertex c, in Ray ray)
     // get hit info
     hitInfo.hit = true;
     hitInfo.depth = t;
-    hitInfo.normal = normalize(-surfaceNormal);//normalize(a.normal * (1 - u - v) + b.normal * u + c.normal * v);
+    hitInfo.normal = normalize(a.normal * (1 - u - v) + b.normal * u + c.normal * v);
     hitInfo.position = ray.origin + ray.direction * t;
 
     return hitInfo;
@@ -278,18 +278,18 @@ RayHitInfo meshInstanceOnHit(in MeshInstanceCommand command, in Ray ray)
             transform[i][j] = command.transform[j * 4 + i];
     }
 
-    mat3 normalTransform = mat3(transpose(inverse(transform)));
+    mat3 normalTransform = mat3(transpose(inverse(transform))); // can be cached
 
     // get mesh
     MeshInfo info = meshInfos[command.meshIndex];
 
     // hit all triangles in mesh
-    for (int i = info.startIndex; i < info.vertexCount; i += 3)
+    for (int i = 0; i < info.vertexCount; i += 3)
     {
         // get indices
-        int indexA = indices[i];
-        int indexB = indices[i + 1];
-        int indexC = indices[i + 2];
+        int indexA = indices[i + info.startIndex];
+        int indexB = indices[i + info.startIndex + 1];
+        int indexC = indices[i + info.startIndex + 2];
 
         // get triangle
         Vertex vertexA = vertices[indexA];
@@ -337,7 +337,6 @@ vec3 trace(in Ray ray)
         {
             copyRayHitInfo(meshInstanceOnHit(meshInstanceCommands[i], ray), hitInfo);
         }
-
 
         // check for collision
         if (! hitInfo.hit)

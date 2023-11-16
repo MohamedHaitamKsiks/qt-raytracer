@@ -13,7 +13,7 @@ public:
 
 private:
     // mesh data
-    QString meshPath;
+    QString meshPath = "suzanne.obj";
 
     void draw();
 };

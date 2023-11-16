@@ -2,14 +2,16 @@
 #include "entity3d/ball3d.h"
 #include "entity3d/entitymanager.h"
 
+#define TINYOBJLOADER_IMPLEMENTATION
+#include "tiny_obj_loader.h"
+
 #include <QMessageBox>
 
-
 #define SPHERE_COMMAND_MAX 16000
-#define MESH_INSTANCE_COMMAND_MAX 16000
-#define MESH_INFOS_MAX 16000
-#define VERTEX_MAX 16000
-#define INDEX_MAX 16000
+#define MESH_INSTANCE_COMMAND_MAX 160000
+#define MESH_INFOS_MAX 160000
+#define VERTEX_MAX 160000
+#define INDEX_MAX 160000
 
 #define COMPUTE_SHADER_PATH ":/shaders/raytracer.glsl"
 
@@ -112,7 +114,7 @@ void RaytracingRenderer::draw(QOpenGLContext* context, int width, int height)
     // RENDERING!!!
 
     // start compute
-    this->glFunctions.glDispatchCompute(this->canvasWidth, this->canvasHeight, 1);
+    this->glFunctions.glDispatchCompute(this->canvasWidth / 8, this->canvasHeight / 4   , 1);
 
     // wait for compute shader to finish
     this->glFunctions.glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
@@ -179,9 +181,78 @@ void RaytracingRenderer::bindShaderBuffer(uint32_t buffer)
     this->glFunctions.glBindBuffer(GL_SHADER_STORAGE_BUFFER, buffer);
 }
 
-void RaytracingRenderer::loadMesh(const QString& meshPath)
+bool RaytracingRenderer::loadMesh(const QString& meshPath)
 {
+    // create vertex and index vectors
+    QVector<Vertex> vertices{};
+    QVector<int> indices{};
 
+    // open mesh path file
+    QFile meshFile(meshPath);
+    if (!meshFile.open(QFile::ReadOnly))
+    {
+        return false;
+    }
+
+    // load obj
+    tinyobj::ObjReaderConfig reader_config{};
+    reader_config.mtl_search_path = "./";
+
+    tinyobj::ObjReader reader;
+    if (!reader.ParseFromString(meshFile.readAll().toStdString(), "", reader_config))
+        return false;
+
+    // get obj data
+    const auto& attrib = reader.GetAttrib();
+    int indexCounter = 0;
+
+    for (const auto& shape: reader.GetShapes())
+    {
+        // copy vertices
+        // Loop over faces(polygon)
+        size_t indexOffset = 0;
+        for (size_t f = 0; f < shape.mesh.num_face_vertices.size(); f++) {
+            size_t fv = size_t(shape.mesh.num_face_vertices[f]);
+            // Loop over vertices in the face.
+            for (size_t v = 0; v < fv; v++) {
+                Vertex vertex{};
+
+                // access to vertex
+                tinyobj::index_t idx = shape.mesh.indices[indexOffset + v];
+
+                vertex.position = QVector3D(
+                    attrib.vertices[3*size_t(idx.vertex_index)+0],
+                    attrib.vertices[3*size_t(idx.vertex_index)+1],
+                    attrib.vertices[3*size_t(idx.vertex_index)+2] );
+
+                // Check if `normal_index` is zero or positive. negative = no normal data
+                if (idx.normal_index >= 0) {
+
+                    vertex.normal = QVector3D(
+                        attrib.normals[3*size_t(idx.normal_index)+0],
+                        attrib.normals[3*size_t(idx.normal_index)+1],
+                        attrib.normals[3*size_t(idx.normal_index)+2]);
+                }
+
+                // push vertex
+                vertices.push_back(vertex);
+
+                // push index
+                indices.push_back(indexCounter);
+                indexCounter++;
+
+            }
+
+            indexOffset += fv;
+
+        }
+
+    }
+
+    // load mesh into gpu
+    this->loadMesh(meshPath, vertices, indices);
+
+    return true;
 }
 
 void RaytracingRenderer::loadMesh(const QString& meshName, const QVector<Vertex>& vertices, QVector<int> indices)
@@ -189,13 +260,13 @@ void RaytracingRenderer::loadMesh(const QString& meshName, const QVector<Vertex>
     // preprocess indices
     for (int i = 0; i < indices.size(); i++)
     {
-        indices[i] += vertexCount;
+        indices[i] += this->vertexCount;
     }
 
     // create mesh info
     MeshInfo meshInfo;
     meshInfo.startIndex = lastMeshIndex;
-    meshInfo.vertexCount = indices.count();
+    meshInfo.vertexCount = indices.size();
 
     // send mesh info
     this->bindShaderBuffer(this->meshInfosBufferObject);
@@ -213,5 +284,5 @@ void RaytracingRenderer::loadMesh(const QString& meshName, const QVector<Vertex>
 
     // register mesh
     this->meshIndices[meshName] = this->meshCount;
-    meshCount++;
+    this->meshCount++;
 }

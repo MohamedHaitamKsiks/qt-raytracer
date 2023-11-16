@@ -3,5 +3,6 @@
         <file>shaders/default.vert</file>
         <file>shaders/default.frag</file>
         <file>shaders/raytracer.glsl</file>
+        <file>models/suzanne.obj</file>
     </qresource>
 </RCC>

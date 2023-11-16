@@ -61,7 +61,8 @@ public:
     }
 
     // load mesh from file
-    void loadMesh(const QString& meshPath);
+    // return if mesh is loaded
+    bool loadMesh(const QString& meshPath);
 
     // load file from vertex files
     void loadMesh(const QString& meshName, const QVector<Vertex>& vertices, QVector<int> indices);

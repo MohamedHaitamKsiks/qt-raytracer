@@ -133,3 +133,27 @@ QWidget* FieldSerializer::Serialize<Material>(const QString& fieldName, Material
 
     return widget;
 }
+
+template<>
+QWidget* FieldSerializer::Serialize<QString>(const QString& fieldName, QString& field, QWidget* parent)
+{
+    // field container
+    auto* widget = new QWidget(parent);
+    auto* layout = new QVBoxLayout(widget);
+    layout->setContentsMargins(QMargins(0, 0, 0, 0));
+
+    // add label
+    auto* label = new QLabel(fieldName);
+    layout->addWidget(label);
+
+    // serialize fields material params
+    auto* inputField = new QLineEdit(field);
+    layout->addWidget(inputField);
+
+    QLineEdit::connect(inputField, &QLineEdit::textEdited, [&field](QString newValue) {
+        field = newValue;
+        RaytracingRenderer::instance()->resetRenderer();
+    });
+
+    return widget;
+}

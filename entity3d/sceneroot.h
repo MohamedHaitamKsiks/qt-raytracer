@@ -40,8 +40,8 @@ private:
     QVector3D groundColor{0.2, 0.2, 0.4};
 
     // ray tracer config
-    int rayMaxBounce = 10;
-    int samplerPerPixel = 2;
+    int rayMaxBounce = 2;
+    int samplerPerPixel = 1;
 
 
 };
